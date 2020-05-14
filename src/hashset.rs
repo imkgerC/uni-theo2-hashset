@@ -6,11 +6,11 @@ impl Hasher<u32> for ModHash {
 }
 
 pub struct MulHash;
-const phi: f32 = 0.61803398875;
+const phi: f64 = 0.61803398875;
 impl Hasher<u32> for MulHash {
     fn hash(val: &u32, max: usize) -> usize {
-        let val = *val as f32;
-        (max as f32 * (val * phi - f32::floor(val * phi))) as usize
+        let val = *val as f64;
+        (max as f64 * ((val * phi) - f64::floor(val * phi))) as usize
     }
 }
 

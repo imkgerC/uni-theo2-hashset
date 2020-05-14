@@ -9,7 +9,7 @@ fn main() {
     let table: OpenTable1024<u32> = OpenTable1024::new();
     let mut table: Box<dyn OpenHashTable<u32, MulHash, LinearProber>> = Box::new(table);
     let mut rng = thread_rng();
-    for _ in 0..1000 {
+    for _ in 0..512 {
         // more or less 50% occupancy
         let num = rng.gen();
         HashTable::insert(table.as_mut(), &num);
