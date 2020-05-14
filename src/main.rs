@@ -1,5 +1,9 @@
 mod hashset;
 
+use hashset::*;
 fn main() {
-    println!("Hello World");
+    let mut table: OpenTable1024<u32> = OpenTable1024::new();
+    let mut table: Box<dyn OpenHashTable<u32, ModHash, QuadraticProber>> = Box::new(table);
+    HashTable::insert(table.as_mut(), &3);
+    println!("{}", HashTable::has(table.as_ref(), &3));
 }
