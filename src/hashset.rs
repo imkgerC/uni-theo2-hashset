@@ -97,23 +97,21 @@ impl<T: PartialEq, H: Hasher<T>, P: Prober> HashTable<T, H> for dyn OpenHashTabl
     }
 }
 
-pub struct OpenTable1024<T: PartialEq + Copy + Default> {
+pub struct OpenTable1024<T: PartialEq + Copy> {
     collisions: usize,
     entries: [Option<T>; 1 << 10],
 }
 
-impl<T: PartialEq + Copy + Default> OpenTable1024<T> {
+impl<T: PartialEq + Copy> OpenTable1024<T> {
     pub fn new() -> Self {
         Self {
             collisions: 0,
-            entries: [Some(T::default()); 1 << 10],
+            entries: [None; 1 << 10],
         }
     }
 }
 
-impl<T: PartialEq + Copy + Default, P: Prober, H: Hasher<T>> OpenHashTable<T, H, P>
-    for OpenTable1024<T>
-{
+impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> OpenHashTable<T, H, P> for OpenTable1024<T> {
     fn get(&self, index: usize) -> Option<T> {
         self.entries[index]
     }
