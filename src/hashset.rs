@@ -65,7 +65,11 @@ pub trait OpenHashTable<T, H: Hasher<T>, P: Prober> {
     }
 }
 
-impl<T: PartialEq, H: Hasher<T>, P: Prober> HashTable<T, H> for dyn OpenHashTable<T, H, P> {
+impl<T: PartialEq, H: Hasher<T>, O, P> HashTable<T, H> for O
+where
+    P: Prober,
+    O: OpenHashTable<T, H, P>,
+{
     fn has(&mut self, val: &T) -> bool {
         let mut index = H::hash(val, self.get_max());
         let mut attempts = 0;
@@ -79,7 +83,7 @@ impl<T: PartialEq, H: Hasher<T>, P: Prober> HashTable<T, H> for dyn OpenHashTabl
             }
             attempts += 1;
             self.increment_collisions();
-            index = (index + P::probe(attempts)) % self.get_max();
+            index = (index + QuadraticProber::probe(attempts)) % self.get_max();
         }
         return false;
     }
