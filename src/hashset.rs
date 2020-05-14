@@ -20,7 +20,7 @@ pub trait Hasher<T> {
 }
 
 pub trait HashTable<T, H: Hasher<T>> {
-    fn has(&self, val: &T) -> bool;
+    fn has(&mut self, val: &T) -> bool;
     fn reset_collisions(&mut self);
     fn get_collisions(&self) -> usize;
     fn insert(&mut self, val: &T);
@@ -50,6 +50,7 @@ pub trait OpenHashTable<T, H: Hasher<T>, P: Prober> {
     fn set(&mut self, index: usize, val: &T);
     fn reset_collisions(&mut self);
     fn get_collisions(&self) -> usize;
+    fn increment_collisions(&mut self);
     fn probe(&self, key: &T) -> Option<usize> {
         let mut index = H::hash(key, self.get_max());
         let mut attempts = 0;
@@ -65,7 +66,7 @@ pub trait OpenHashTable<T, H: Hasher<T>, P: Prober> {
 }
 
 impl<T: PartialEq, H: Hasher<T>, P: Prober> HashTable<T, H> for dyn OpenHashTable<T, H, P> {
-    fn has(&self, val: &T) -> bool {
+    fn has(&mut self, val: &T) -> bool {
         let mut index = H::hash(val, self.get_max());
         let mut attempts = 0;
         while attempts < self.get_max() {
@@ -73,8 +74,11 @@ impl<T: PartialEq, H: Hasher<T>, P: Prober> HashTable<T, H> for dyn OpenHashTabl
                 if inside == *val {
                     return true;
                 }
+            } else {
+                return false;
             }
             attempts += 1;
+            self.increment_collisions();
             index = (index + P::probe(attempts)) % self.get_max();
         }
         return false;
@@ -126,5 +130,8 @@ impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> OpenHashTable<T, H, P> for Op
     }
     fn get_collisions(&self) -> usize {
         self.collisions
+    }
+    fn increment_collisions(&mut self) {
+        self.collisions += 1;
     }
 }
