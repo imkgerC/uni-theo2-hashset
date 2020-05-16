@@ -10,7 +10,7 @@ fn main() {
         (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, QuadraticProber, MulHash>>::new()), "Quadratic Mul".to_owned()),
         (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, QuadraticProber, ModHash>>::new()), "Quadratic Mod".to_owned()),
         (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, LinearProber, MulHash>>::new()), "Linear Mul".to_owned()),
-        (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, LinearProber, ModHash>>::new()), "Linear Mul".to_owned()),
+        (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, LinearProber, ModHash>>::new()), "Linear Mod".to_owned()),
     ];
     print_header();
     for (table, name) in tables {
@@ -23,7 +23,7 @@ fn print_header() {
     println!("{:-<45}", "");
 }
 
-fn generate_stats(mut builder: Box<dyn HashTableBuilder<u32>>, name: String) {
+fn generate_stats(builder: Box<dyn HashTableBuilder<u32>>, name: String) {
     let mut stats = [(0f32, 0f32); 4];
     for (i, s) in [512, 921, 973, 1024].into_iter().enumerate() {
         stats[i] = get_stats(builder.build(), *s);
