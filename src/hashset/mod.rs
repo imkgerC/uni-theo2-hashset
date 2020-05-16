@@ -79,6 +79,88 @@ impl<T: PartialEq + Copy, H: Hasher<T>> Default for SeparateChainingTable<T, H> 
     }
 }
 
+pub struct CoalescedTable<T: PartialEq + Copy, H: Hasher<T>> {
+    collisions: usize,
+    pub entries: [Option<(T, Option<usize>)>; ELEMENT_COUNT],
+    hasher: PhantomData<H>,
+    cursor: usize,
+}
+impl<T: PartialEq + Copy, H: Hasher<T>> Default for CoalescedTable<T, H> {
+    fn default() -> Self {
+        Self {
+            collisions: 0,
+            entries: [None; ELEMENT_COUNT],
+            hasher: PhantomData,
+            cursor: 0,
+        }
+    }
+}
+
+impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
+    fn has(&mut self, val: &T) -> bool {
+        let mut index = H::hash(val, ELEMENT_COUNT);
+        if self.entries[index].is_none() {
+            self.entries[index] = Some((*val, None));
+            return true;
+        }
+        self.collisions += 1;
+        loop {
+            if let Some((x, next)) = self.entries[index] {
+                if x == *val {
+                    return true;
+                }
+                self.collisions += 1;
+                if let Some(i) = next {
+                    index = i;
+                } else {
+                    break;
+                }
+            } else {
+                panic!("data inconsistency");
+            }
+        }
+        return false;
+    }
+    fn reset_collisions(&mut self) {
+        self.collisions = 0;
+    }
+    fn get_collisions(&self) -> usize {
+        self.collisions
+    }
+    fn insert(&mut self, val: &T) -> bool {
+        let mut index = H::hash(val, ELEMENT_COUNT);
+        if self.entries[index].is_none() {
+            self.entries[index] = Some((*val, None));
+            return true;
+        }
+        loop {
+            if let Some((x, next)) = self.entries[index] {
+                if x == *val {
+                    return true;
+                }
+                self.collisions += 1;
+                if let Some(i) = next {
+                    index = i;
+                } else {
+                    break;
+                }
+            } else {
+                panic!("data inconsistency");
+            }
+        }
+        while self.cursor < ELEMENT_COUNT {
+            if self.entries[self.cursor].is_none() {
+                self.entries[self.cursor] = Some((*val, None));
+                let old = self.entries[index].expect("data inconsistency").0;
+                self.entries[index] = Some((old, Some(self.cursor)));
+                return true;
+            }
+            self.cursor += 1;
+        }
+        return true;
+    }
+}
+
 impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T, H> {
     fn has(&mut self, val: &T) -> bool {
         let index = H::hash(val, ELEMENT_COUNT);
@@ -106,7 +188,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
         let index = H::hash(val, ELEMENT_COUNT);
         if self.entries[index].0.is_none() {
             self.entries[index].0 = Some(*val);
-                return true;
+            return true;
         }
         if let Some(x) = self.entries[index].0 {
             if x == *val {
@@ -147,7 +229,6 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, 
         return true;
     }
 }
-
 
 pub struct OpenAddressingTable<T: PartialEq + Copy, P: Prober, H: Hasher<T>> {
     collisions: usize,
