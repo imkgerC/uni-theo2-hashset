@@ -13,6 +13,9 @@ fn main() {
         (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, LinearProber, MulHash>>::new()), "Linear Mul".to_owned()),
         (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, LinearProber, ModHash>>::new()), "Linear Mod".to_owned()),
         (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, LinearProber, XorShiftHash>>::new()), "Linear XOR".to_owned()),
+        (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, TriangularProber, MulHash>>::new()), "Triangular Mul".to_owned()),
+        (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, TriangularProber, ModHash>>::new()), "Triangular Mod".to_owned()),
+        (Box::new(DefaultHashTableBuilder::<u32, OpenAddressingTable::<u32, TriangularProber, XorShiftHash>>::new()), "Triangular XOR".to_owned()),
     ];
     print_header();
     for (table, name) in tables {
@@ -51,11 +54,12 @@ fn get_stats(mut table: Box<dyn HashTable<u32>>, fill: usize) -> (f32, f32, f64)
     let mut nf = 0usize;
     let mut cs = 0usize;
     let mut cf = 0usize;
+    let random_samples = 1usize << 8;
     let start_time = Instant::now();
     for x in &inserted_nums {
         table.as_mut().has(x);
     }
-    for _ in 0..(1usize << 8) {
+    for _ in 0..random_samples {
         let num = rng.gen();
         table.as_mut().has(&num);
     }
@@ -86,5 +90,5 @@ fn get_stats(mut table: Box<dyn HashTable<u32>>, fill: usize) -> (f32, f32, f64)
     let cf = cf as f32;
     let ns = ns as f32;
     let cs = cs as f32;
-    ((cf / nf), (cs / ns), (duration as f64 / (ns as f64 + (1 << 8) as f64)))
+    ((cf / nf), (cs / ns), (duration as f64 / (ns as f64 + random_samples as f64)))
 }
