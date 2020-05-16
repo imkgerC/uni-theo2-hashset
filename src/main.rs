@@ -6,14 +6,13 @@ use hashset::*;
 use rand::{thread_rng, Rng};
 
 fn main() {
-    let table: OpenTable1024<u32> = OpenTable1024::new();
-    // let mut table: Box<dyn OpenHashTable<u32, MulHash, QuadraticProber>> = Box::new(table);
-    // let mut table: Box<dyn HashTable<u32, MulHash>> = table;
-    let table: Box<dyn HashTable<u32, MulHash>> = Box::new(table);
+    let table: OpenAddressingTable<u32, QuadraticProber, MulHash> = OpenAddressingTable::new();
+    let table: Box<dyn HashTable<u32>> = Box::new(table);
+    let tables: Vec<Box<dyn HashTable<u32>>> = Vec::new();
     generate_stats(table, "Lala".to_owned());
 }
 
-fn generate_stats<H: Hasher<u32>>(mut table: Box<dyn HashTable<u32, H>>, name: String) {
+fn generate_stats(mut table: Box<dyn HashTable<u32>>, name: String) {
     let mut rng = thread_rng();
     for _ in 0..512 {
         // more or less 50% occupancy
