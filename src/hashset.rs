@@ -25,7 +25,7 @@ pub trait HashTable<T> {
     fn has(&mut self, val: &T) -> bool;
     fn reset_collisions(&mut self);
     fn get_collisions(&self) -> usize;
-    fn insert(&mut self, val: &T);
+    fn insert(&mut self, val: &T) -> bool;
 }
 
 pub trait Prober {
@@ -46,14 +46,28 @@ impl Prober for QuadraticProber {
     }
 }
 
-pub trait OpenHashTable<T, H: Hasher<T>, P: Prober> {
-    fn get(&self, index: usize) -> Option<T>;
-    fn get_max(&self) -> usize;
-    fn set(&mut self, index: usize, val: &T);
-    fn reset_collisions(&mut self);
-    fn get_collisions(&self) -> usize;
-    fn increment_collisions(&mut self);
-    
+pub trait HashTableBuilder<T> {
+    fn build(&self) -> Box<dyn HashTable<T>>;
+}
+
+pub struct DefaultHashTableBuilder<T: PartialEq, H: HashTable<T>+Default> {
+    table: PhantomData<H>,
+    t: PhantomData<T>
+}
+
+impl<T: PartialEq, H: 'static + HashTable<T>+Default> HashTableBuilder<T> for DefaultHashTableBuilder<T, H> {
+    fn build(&self) -> Box<dyn HashTable<T>> {
+        Box::new(H::default())
+    }
+}
+
+impl<T: PartialEq, H: HashTable<T>+Default> DefaultHashTableBuilder<T, H> {
+    pub fn new() -> Self {
+        Self {
+            table: PhantomData,
+            t: PhantomData,
+        }
+    }
 }
 
 pub struct OpenAddressingTable<T: PartialEq + Copy, P: Prober, H: Hasher<T>> {
@@ -61,6 +75,12 @@ pub struct OpenAddressingTable<T: PartialEq + Copy, P: Prober, H: Hasher<T>> {
     entries: [Option<T>; 1 << 10],
     prober: PhantomData<P>,
     hasher: PhantomData<H>,
+}
+
+impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> Default for OpenAddressingTable<T, P, H> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> OpenAddressingTable<T, P, H> {
@@ -112,20 +132,20 @@ impl<T: PartialEq+Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressing
     fn get_collisions(&self) -> usize {
         self.collisions
     }
-    fn insert(&mut self, val: &T) {
+    fn insert(&mut self, val: &T) -> bool{
         if self.has(val) {
-            return;
+            return true;
         }
         let mut index = H::hash(val, self.get_max());
         let mut attempts = 0;
         while attempts < self.get_max() {
             if self.get(index).is_none() {
                 self.set(index, val);
-                return;
+                return true;
             }
             attempts += 1;
             index = (index + P::probe(attempts)) % self.get_max();
         }
-        panic!("key cannot be inserted");
+        return false;
     }
 }
