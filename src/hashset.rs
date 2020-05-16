@@ -50,18 +50,20 @@ pub trait HashTableBuilder<T> {
     fn build(&self) -> Box<dyn HashTable<T>>;
 }
 
-pub struct DefaultHashTableBuilder<T: PartialEq, H: HashTable<T>+Default> {
+pub struct DefaultHashTableBuilder<T: PartialEq, H: HashTable<T> + Default> {
     table: PhantomData<H>,
-    t: PhantomData<T>
+    t: PhantomData<T>,
 }
 
-impl<T: PartialEq, H: 'static + HashTable<T>+Default> HashTableBuilder<T> for DefaultHashTableBuilder<T, H> {
+impl<T: PartialEq, H: 'static + HashTable<T> + Default> HashTableBuilder<T>
+    for DefaultHashTableBuilder<T, H>
+{
     fn build(&self) -> Box<dyn HashTable<T>> {
         Box::new(H::default())
     }
 }
 
-impl<T: PartialEq, H: HashTable<T>+Default> DefaultHashTableBuilder<T, H> {
+impl<T: PartialEq, H: HashTable<T> + Default> DefaultHashTableBuilder<T, H> {
     pub fn new() -> Self {
         Self {
             table: PhantomData,
@@ -70,21 +72,16 @@ impl<T: PartialEq, H: HashTable<T>+Default> DefaultHashTableBuilder<T, H> {
     }
 }
 
+const ELEMENT_COUNT: usize = 1 << 10;
 pub struct OpenAddressingTable<T: PartialEq + Copy, P: Prober, H: Hasher<T>> {
     collisions: usize,
-    entries: [Option<T>; 1 << 10],
+    entries: [Option<T>; ELEMENT_COUNT],
     prober: PhantomData<P>,
     hasher: PhantomData<H>,
 }
 
 impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> Default for OpenAddressingTable<T, P, H> {
     fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> OpenAddressingTable<T, P, H> {
-    pub fn new() -> Self {
         Self {
             collisions: 0,
             entries: [None; 1 << 10],
@@ -92,28 +89,14 @@ impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> OpenAddressingTable<T, P, H> 
             hasher: PhantomData,
         }
     }
-    fn get(&self, index: usize) -> Option<T> {
-        self.entries[index]
-    }
-    fn get_max(&self) -> usize {
-        1 << 10
-    }
-    fn set(&mut self, index: usize, val: &T) {
-        self.entries[index] = Some(*val)
-    }
-    
-    fn increment_collisions(&mut self) {
-        self.collisions += 1;
-    }
 }
 
-impl<T: PartialEq+Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressingTable<T, P, H>
-{
+impl<T: PartialEq + Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressingTable<T, P, H> {
     fn has(&mut self, val: &T) -> bool {
-        let mut index = H::hash(val, self.get_max());
+        let mut index = H::hash(val, ELEMENT_COUNT);
         let mut attempts = 0;
-        while attempts < self.get_max() {
-            if let Some(inside) = self.get(index) {
+        while attempts < ELEMENT_COUNT {
+            if let Some(inside) = self.entries[index] {
                 if inside == *val {
                     return true;
                 }
@@ -121,8 +104,8 @@ impl<T: PartialEq+Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressing
                 return false;
             }
             attempts += 1;
-            self.increment_collisions();
-            index = (index + P::probe(attempts)) % self.get_max();
+            self.collisions += 1;
+            index = (index + P::probe(attempts)) % ELEMENT_COUNT;
         }
         return false;
     }
@@ -132,19 +115,19 @@ impl<T: PartialEq+Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressing
     fn get_collisions(&self) -> usize {
         self.collisions
     }
-    fn insert(&mut self, val: &T) -> bool{
+    fn insert(&mut self, val: &T) -> bool {
         if self.has(val) {
             return true;
         }
-        let mut index = H::hash(val, self.get_max());
+        let mut index = H::hash(val, ELEMENT_COUNT);
         let mut attempts = 0;
-        while attempts < self.get_max() {
-            if self.get(index).is_none() {
-                self.set(index, val);
+        while attempts < ELEMENT_COUNT {
+            if self.entries[index].is_none() {
+                self.entries[index] = Some(*val);
                 return true;
             }
             attempts += 1;
-            index = (index + P::probe(attempts)) % self.get_max();
+            index = (index + P::probe(attempts)) % ELEMENT_COUNT;
         }
         return false;
     }
