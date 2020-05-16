@@ -16,6 +16,17 @@ impl Hasher<u32> for MulHash {
     }
 }
 
+pub struct XorShiftHash;
+impl Hasher<u32> for XorShiftHash {
+    fn hash(val: &u32, max: usize) -> usize {
+        let x = *val;
+        let x = ((x >> 16) ^ x) * 0x45d9f3bu32;
+        let x = ((x >> 16) ^ x) * 0x45d9f3bu32;
+        let x = (x >> 16) ^ x;
+        return x as usize % max;
+    }
+}
+
 /// Minimal hashing trait
 pub trait Hasher<T> {
     fn hash(val: &T, max: usize) -> usize;
