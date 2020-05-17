@@ -98,7 +98,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> Default for CoalescedTable<T, H> {
 
 impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
     fn has(&mut self, val: &T) -> bool {
-        let mut index = H::hash(val, ELEMENT_COUNT);
+        let mut index = H::hash(val, self.entries.len());
         if self.entries[index].is_none() {
             self.entries[index] = Some((*val, None));
             return true;
@@ -128,7 +128,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
         self.collisions
     }
     fn insert(&mut self, val: &T) -> bool {
-        let mut index = H::hash(val, ELEMENT_COUNT);
+        let mut index = H::hash(val, self.entries.len());
         if self.entries[index].is_none() {
             self.entries[index] = Some((*val, None));
             return true;
@@ -148,7 +148,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
                 panic!("data inconsistency");
             }
         }
-        while self.cursor < ELEMENT_COUNT {
+        while self.cursor < self.entries.len() {
             if self.entries[self.cursor].is_none() {
                 self.entries[self.cursor] = Some((*val, None));
                 let old = self.entries[index].expect("data inconsistency").0;
@@ -163,7 +163,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
 
 impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T, H> {
     fn has(&mut self, val: &T) -> bool {
-        let index = H::hash(val, ELEMENT_COUNT);
+        let index = H::hash(val, self.entries.len());
         if let Some(x) = self.entries[index].0 {
             if x == *val {
                 return true;
@@ -185,7 +185,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
         self.collisions
     }
     fn insert(&mut self, val: &T) -> bool {
-        let index = H::hash(val, ELEMENT_COUNT);
+        let index = H::hash(val, self.entries.len());
         if self.entries[index].0.is_none() {
             self.entries[index].0 = Some(*val);
             return true;
@@ -205,7 +205,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
 
 impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, H> {
     fn has(&mut self, val: &T) -> bool {
-        let index = H::hash(val, ELEMENT_COUNT);
+        let index = H::hash(val, self.entries.len());
         for x in self.entries[index].iter() {
             if *x == *val {
                 return true;
@@ -221,7 +221,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, 
         self.collisions
     }
     fn insert(&mut self, val: &T) -> bool {
-        let index = H::hash(val, ELEMENT_COUNT);
+        let index = H::hash(val, self.entries.len());
         if self.entries[index].contains(val) {
             return true;
         }
@@ -250,9 +250,9 @@ impl<T: PartialEq + Copy, P: Prober, H: Hasher<T>> Default for OpenAddressingTab
 
 impl<T: PartialEq + Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressingTable<T, P, H> {
     fn has(&mut self, val: &T) -> bool {
-        let mut index = H::hash(val, ELEMENT_COUNT);
+        let mut index = H::hash(val, self.entries.len());
         let mut attempts = 0;
-        while attempts < ELEMENT_COUNT {
+        while attempts < self.entries.len() {
             if let Some(inside) = self.entries[index] {
                 if inside == *val {
                     return true;
@@ -262,7 +262,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressi
             }
             attempts += 1;
             self.collisions += 1;
-            index = (index + P::probe(attempts)) % ELEMENT_COUNT;
+            index = (index + P::probe(attempts)) % self.entries.len();
         }
         return false;
     }
@@ -276,15 +276,15 @@ impl<T: PartialEq + Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressi
         if self.has(val) {
             return true;
         }
-        let mut index = H::hash(val, ELEMENT_COUNT);
+        let mut index = H::hash(val, self.entries.len());
         let mut attempts = 0;
-        while attempts < ELEMENT_COUNT {
+        while attempts < self.entries.len() {
             if self.entries[index].is_none() {
                 self.entries[index] = Some(*val);
                 return true;
             }
             attempts += 1;
-            index = (index + P::probe(attempts)) % ELEMENT_COUNT;
+            index = (index + P::probe(attempts)) % self.entries.len();
         }
         return false;
     }
