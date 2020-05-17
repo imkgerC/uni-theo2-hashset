@@ -39,7 +39,7 @@ impl<T: PartialEq, H: HashTable<T> + Default> DefaultHashTableBuilder<T, H> {
     }
 }
 
-const ELEMENT_COUNT: usize = 1 << 10;
+pub const ELEMENT_COUNT: usize = 1 << 15;
 
 pub struct DirectChainingTable<T: PartialEq + Copy, H: Hasher<T>> {
     collisions: usize,
