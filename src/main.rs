@@ -36,13 +36,12 @@ fn main() {
         (get_builder::<u32, CoalescedTable::<u32, ModHash>>(), "Coalesced Mod".to_owned()),
         (get_builder::<u32, CoalescedTable::<u32, XorShiftHash>>(), "Coalesced XOR".to_owned()),
     ];
-    print_header();
     generate_stats(tables);
 }
 
-fn print_header() {
-    let mut out = format!("{:20}", "Name");
-    for (i, lambda) in LOAD_FACTORS.into_iter().enumerate() {
+fn print_header(name: &str) {
+    let mut out = format!("{:20}", name);
+    for (i, lambda) in LOAD_FACTORS.iter().enumerate() {
         let lambda = format!("{:.0}%", lambda * 100f64);
         out.push_str(&format!("{:^5}", lambda));
         if i != LOAD_FACTORS.len() - 1 {
@@ -50,11 +49,12 @@ fn print_header() {
         }
     }
     println!("{}", out);
-    println!("{:-<width$}", "", width = 25 + 5 * LOAD_FACTORS.len());
+    // println!("{:-<width$}", "", width = 25 + 5 * LOAD_FACTORS.len());
 }
 
 fn print_subtable(name: &str, stats: &[(f32, f64, f32, f64)]) {
-    println!("{:20}", name);
+    println!();
+    print_header(name);
     let mut out = format!("{:20}", "+ collisions");
     for i in 0..stats.len() {
         out.push_str(&format!("{:^5.2}", stats[i].0));
@@ -93,8 +93,8 @@ fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
     let mut all_stats = Vec::new();
     for (builder, name) in tables {
         let mut stats = [(0f32, 0f64, 0f32, 0f64); LOAD_FACTORS.len()];
-        for (i, s) in LOAD_FACTORS.into_iter().enumerate() {
-            stats[i] = get_stats(&builder, *s);
+        for (i, s) in LOAD_FACTORS.iter().enumerate() {
+            stats[i] = get_stats(builder.as_ref(), *s);
         }
         print_subtable(&name, &stats);
         all_stats.push((name, stats));
@@ -109,12 +109,12 @@ fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
         .expect("Could not open file to write output analysis to");
     let mut header = String::new();
     header.push_str("\"Name\",");
-    for lambda in LOAD_FACTORS.into_iter() {
-        let percentage = format!("{:.0}%", lambda*100f64);
+    for lambda in LOAD_FACTORS.iter() {
+        let percentage = format!("{:.0}%", lambda * 100f64);
         header.push_str(&format!("\"Success Collisions({0})\",\"Success Time({0})[ns]\",\"Failures Collisions({0})\",\"Failures Time({0})[ns]\",", percentage));
     }
     header.push_str("\r\n");
-    file.write(header.as_bytes())
+    file.write_all(header.as_bytes())
         .expect("Could not write to file");
     for (name, stats) in all_stats {
         let mut f = format!("\"{}\"", name);
@@ -122,17 +122,18 @@ fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
             f.push_str(&format!(",{},{},{},{}", stat.0, stat.1, stat.2, stat.3));
         }
         f.push_str("\n");
-        file.write(f.as_bytes()).expect("Could not write to file");
+        file.write_all(f.as_bytes())
+            .expect("Could not write to file");
     }
 }
 
-fn get_stats(builder: &Box<dyn HashTableBuilder<u32>>, fill: f64) -> (f32, f64, f32, f64) {
+fn get_stats(builder: &dyn HashTableBuilder<u32>, fill: f64) -> (f32, f64, f32, f64) {
     let fill = f64::min(fill * ELEMENT_COUNT as f64, ELEMENT_COUNT as f64) as usize;
     get_stats_rec(builder, fill, 0)
 }
 
 fn get_stats_rec(
-    builder: &Box<dyn HashTableBuilder<u32>>,
+    builder: &dyn HashTableBuilder<u32>,
     fill: usize,
     attempt: usize,
 ) -> (f32, f64, f32, f64) {

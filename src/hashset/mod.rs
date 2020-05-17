@@ -119,7 +119,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
                 panic!("data inconsistency");
             }
         }
-        return false;
+        false
     }
     fn reset_collisions(&mut self) {
         self.collisions = 0;
@@ -138,7 +138,6 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
                 if x == *val {
                     return true;
                 }
-                self.collisions += 1;
                 if let Some(i) = next {
                     index = i;
                 } else {
@@ -157,7 +156,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
             }
             self.cursor += 1;
         }
-        return true;
+        true
     }
 }
 
@@ -176,7 +175,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
             }
             self.collisions += 1;
         }
-        return false;
+        false
     }
     fn reset_collisions(&mut self) {
         self.collisions = 0;
@@ -199,7 +198,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
             return true;
         }
         self.entries[index].1.push_front(*val);
-        return true;
+        true
     }
 }
 
@@ -212,7 +211,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, 
             }
             self.collisions += 1;
         }
-        return false;
+        false
     }
     fn reset_collisions(&mut self) {
         self.collisions = 0;
@@ -222,11 +221,10 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, 
     }
     fn insert(&mut self, val: &T) -> bool {
         let index = H::hash(val, self.entries.len());
-        if self.entries[index].contains(val) {
-            return true;
+        if !self.entries[index].contains(val) {
+            self.entries[index].push_front(*val);
         }
-        self.entries[index].push_front(*val);
-        return true;
+        true
     }
 }
 
@@ -264,7 +262,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressi
             self.collisions += 1;
             index = (index + P::probe(attempts)) % self.entries.len();
         }
-        return false;
+        false
     }
     fn reset_collisions(&mut self) {
         self.collisions = 0;
@@ -286,6 +284,6 @@ impl<T: PartialEq + Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressi
             attempts += 1;
             index = (index + P::probe(attempts)) % self.entries.len();
         }
-        return false;
+        false
     }
 }

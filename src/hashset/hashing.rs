@@ -6,7 +6,7 @@ impl Hasher<u32> for ModHash {
 }
 
 pub struct MulHash;
-const PHI: f64 = 0.61803398875;
+const PHI: f64 = 0.618_033_988_75;
 impl Hasher<u32> for MulHash {
     fn hash(val: &u32, max: usize) -> usize {
         let val = *val as f64;
@@ -18,10 +18,10 @@ pub struct XorShiftHash;
 impl Hasher<u32> for XorShiftHash {
     fn hash(val: &u32, max: usize) -> usize {
         let x = *val;
-        let x = ((x >> 16) ^ x).wrapping_mul(0x45d9f3bu32);
-        let x = ((x >> 16) ^ x).wrapping_mul(0x45d9f3bu32);
+        let x = ((x >> 16) ^ x).wrapping_mul(0x45d_9f3bu32);
+        let x = ((x >> 16) ^ x).wrapping_mul(0x45d_9f3bu32);
         let x = (x >> 16) ^ x;
-        return x as usize % max;
+        x as usize % max
     }
 }
 
