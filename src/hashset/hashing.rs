@@ -18,8 +18,8 @@ pub struct XorShiftHash;
 impl Hasher<u32> for XorShiftHash {
     fn hash(val: &u32, max: usize) -> usize {
         let x = *val;
-        let x = ((x >> 16) ^ x).wrapping_mul(0x45d_9f3bu32);
-        let x = ((x >> 16) ^ x).wrapping_mul(0x45d_9f3bu32);
+        let x = ((x >> 16) ^ x).wrapping_mul(0x45d_9f3b_u32);
+        let x = ((x >> 16) ^ x).wrapping_mul(0x45d_9f3b_u32);
         let x = (x >> 16) ^ x;
         x as usize % max
     }

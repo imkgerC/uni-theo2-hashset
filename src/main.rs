@@ -42,7 +42,7 @@ fn main() {
 fn print_header(name: &str) {
     let mut out = format!("{:20}", name);
     for (i, lambda) in LOAD_FACTORS.iter().enumerate() {
-        let lambda = format!("{:.0}%", lambda * 100f64);
+        let lambda = format!("{:.0}%", lambda * 100_f64);
         out.push_str(&format!("{:^5}", lambda));
         if i != LOAD_FACTORS.len() - 1 {
             out.push_str("|");
@@ -92,7 +92,7 @@ fn print_subtable(name: &str, stats: &[(f32, f64, f32, f64)]) {
 fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
     let mut all_stats = Vec::new();
     for (builder, name) in tables {
-        let mut stats = [(0f32, 0f64, 0f32, 0f64); LOAD_FACTORS.len()];
+        let mut stats = [(0_f32, 0_f64, 0_f32, 0_f64); LOAD_FACTORS.len()];
         for (i, s) in LOAD_FACTORS.iter().enumerate() {
             stats[i] = get_stats(builder.as_ref(), *s);
         }
@@ -109,8 +109,8 @@ fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
         .expect("Could not open file to write output analysis to");
     let mut header = String::new();
     header.push_str("\"Name\",");
-    for lambda in LOAD_FACTORS.iter() {
-        let percentage = format!("{:.0}%", lambda * 100f64);
+    for lambda in &LOAD_FACTORS {
+        let percentage = format!("{:.0}%", lambda * 100_f64);
         header.push_str(&format!("\"Success Collisions({0})\",\"Success Time({0})[ns]\",\"Failures Collisions({0})\",\"Failures Time({0})[ns]\",", percentage));
     }
     header.push_str("\r\n");
@@ -118,7 +118,7 @@ fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
         .expect("Could not write to file");
     for (name, stats) in all_stats {
         let mut f = format!("\"{}\"", name);
-        for stat in stats.iter() {
+        for stat in &stats {
             f.push_str(&format!(",{},{},{},{}", stat.0, stat.1, stat.2, stat.3));
         }
         f.push_str("\n");
@@ -150,11 +150,11 @@ fn get_stats_rec(
             return get_stats_rec(builder, fill, attempt + 1);
         }
     }
-    let mut ns = 0usize;
-    let mut nf = 0usize;
-    let mut cs = 0usize;
-    let mut cf = 0usize;
-    let random_samples = 1usize << 16;
+    let mut ns = 0_usize;
+    let mut nf = 0_usize;
+    let mut cs = 0_usize;
+    let mut cf = 0_usize;
+    let random_samples = 1_usize << 16;
     let start_time = Instant::now();
     for x in &inserted_nums {
         table.as_mut().has(x);
@@ -177,7 +177,7 @@ fn get_stats_rec(
             cf += HashTable::get_collisions(table.as_ref());
         }
     }
-    for _ in 0..(1usize << 16) {
+    for _ in 0..(1_usize << 16) {
         let num = rng.gen();
         HashTable::reset_collisions(table.as_mut());
         if HashTable::has(table.as_mut(), &num) {

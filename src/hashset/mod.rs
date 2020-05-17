@@ -169,7 +169,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
             }
             self.collisions += 1;
         }
-        for x in self.entries[index].1.iter() {
+        for x in &self.entries[index].1 {
             if *x == *val {
                 return true;
             }
@@ -205,7 +205,7 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
 impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, H> {
     fn has(&mut self, val: &T) -> bool {
         let index = H::hash(val, self.entries.len());
-        for x in self.entries[index].iter() {
+        for x in &self.entries[index] {
             if *x == *val {
                 return true;
             }
