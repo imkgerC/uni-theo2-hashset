@@ -12,7 +12,8 @@ fn get_builder<T: PartialEq + 'static, H: 'static + HashTable<T> + Default>(
     Box::new(DefaultHashTableBuilder::<T, H>::new())
 }
 
-const LOAD_FACTORS: [f64; 5] = [0.2, 0.5, 0.7, 0.9, 0.95];
+const RESIZE_TO_MAKE_FAIR: bool = true;
+const LOAD_FACTORS: [f64; 4] = [0.05, 0.1, 0.2, 0.3];
 
 fn main() {
     #[rustfmt::skip]
@@ -138,6 +139,9 @@ fn get_stats_rec(
     attempt: usize,
 ) -> (f32, f64, f32, f64) {
     let mut table = builder.build();
+    if RESIZE_TO_MAKE_FAIR {
+        table.as_mut().resize_to_bytes(ELEMENT_COUNT << 3, fill);
+    }
     let mut rng = thread_rng();
     let mut inserted_nums = Vec::with_capacity(fill);
     for _ in 0..fill {

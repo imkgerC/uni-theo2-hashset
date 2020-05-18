@@ -6,11 +6,14 @@ pub use probing::*;
 use std::collections::LinkedList;
 use std::marker::PhantomData;
 
+pub const ELEMENT_COUNT: usize = 1 << 15;
+
 pub trait HashTable<T> {
     fn has(&mut self, val: &T) -> bool;
     fn reset_collisions(&mut self);
     fn get_collisions(&self) -> usize;
     fn insert(&mut self, val: &T) -> bool;
+    fn resize_to_bytes(&mut self, bytes: usize, elements: usize);
 }
 
 pub trait HashTableBuilder<T> {
@@ -39,8 +42,6 @@ impl<T: PartialEq, H: HashTable<T> + Default> DefaultHashTableBuilder<T, H> {
     }
 }
 
-pub const ELEMENT_COUNT: usize = 1 << 15;
-
 pub struct DirectChainingTable<T: PartialEq + Copy, H: Hasher<T>> {
     collisions: usize,
     entries: Vec<LinkedList<T>>,
@@ -48,8 +49,14 @@ pub struct DirectChainingTable<T: PartialEq + Copy, H: Hasher<T>> {
 }
 impl<T: PartialEq + Copy, H: Hasher<T>> Default for DirectChainingTable<T, H> {
     fn default() -> Self {
-        let mut entries = Vec::with_capacity(ELEMENT_COUNT);
-        for _ in 0..ELEMENT_COUNT {
+        Self::with_size(ELEMENT_COUNT)
+    }
+}
+
+impl<T: PartialEq + Copy, H: Hasher<T>> DirectChainingTable<T, H> {
+    fn with_size(size: usize) -> Self {
+        let mut entries = Vec::with_capacity(size);
+        for _ in 0..size {
             entries.push(LinkedList::new());
         }
         Self {
@@ -67,8 +74,14 @@ pub struct SeparateChainingTable<T: PartialEq + Copy, H: Hasher<T>> {
 }
 impl<T: PartialEq + Copy, H: Hasher<T>> Default for SeparateChainingTable<T, H> {
     fn default() -> Self {
-        let mut entries = Vec::with_capacity(ELEMENT_COUNT);
-        for _ in 0..ELEMENT_COUNT {
+        Self::with_size(ELEMENT_COUNT)
+    }
+}
+
+impl<T: PartialEq + Copy, H: Hasher<T>> SeparateChainingTable<T, H> {
+    fn with_size(size: usize) -> Self {
+        let mut entries = Vec::with_capacity(size);
+        for _ in 0..size {
             entries.push((None, LinkedList::new()));
         }
         Self {
@@ -79,17 +92,28 @@ impl<T: PartialEq + Copy, H: Hasher<T>> Default for SeparateChainingTable<T, H> 
     }
 }
 
+// one Option<(T, Option<usize>)> has size 24 => Can only use 10.922 buckets to only use 1 << 18 B
 pub struct CoalescedTable<T: PartialEq + Copy, H: Hasher<T>> {
     collisions: usize,
-    pub entries: [Option<(T, Option<usize>)>; ELEMENT_COUNT],
+    entries: Vec<Option<(T, Option<usize>)>>,
     hasher: PhantomData<H>,
     cursor: usize,
 }
 impl<T: PartialEq + Copy, H: Hasher<T>> Default for CoalescedTable<T, H> {
     fn default() -> Self {
+        Self::with_size(ELEMENT_COUNT)
+    }
+}
+
+impl<T: PartialEq + Copy, H: Hasher<T>> CoalescedTable<T, H> {
+    fn with_size(size: usize) -> Self {
+        let mut entries = Vec::with_capacity(size);
+        for _ in 0..size {
+            entries.push(None);
+        }
         Self {
             collisions: 0,
-            entries: [None; ELEMENT_COUNT],
+            entries,
             hasher: PhantomData,
             cursor: 0,
         }
@@ -158,6 +182,11 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
         }
         true
     }
+
+    fn resize_to_bytes(&mut self, bytes: usize, _elements: usize) {
+        let entries = bytes / 24;
+        *self = Self::with_size(entries);
+    }
 }
 
 impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T, H> {
@@ -200,6 +229,17 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
         self.entries[index].1.push_front(*val);
         true
     }
+    // the type is kind of complicated for this hash table so some assumptions will be made
+    // a bucket has size 40, any element that collides with another one takes up 24
+    // if we assume that 0.25 of all elements have collided with another, our formula becomes
+    // 40*bytes + 0.25*24*elements
+    fn resize_to_bytes(&mut self, bytes: usize, elements: usize) {
+        let available_bytes = bytes as isize - (elements as isize * 6);
+        if available_bytes < 1 {
+            panic!("invalid configuration for direct chaining table");
+        }
+        *self = Self::with_size(available_bytes as usize / 40);
+    }
 }
 
 impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, H> {
@@ -226,8 +266,20 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for DirectChainingTable<T, 
         }
         true
     }
+
+    // size of direct chaining table is buckets*(size of bucket) + entries*(size of node)
+    // size of bucket is the size of an empty linkedlist = 24
+    // size of node is the size of a linkedlist node = 24
+    fn resize_to_bytes(&mut self, bytes: usize, elements: usize) {
+        let available_bytes = bytes as isize - (24 * elements) as isize;
+        if available_bytes < 1 {
+            panic!("not enough bytes available for the buckets");
+        }
+        *self = Self::with_size(available_bytes as usize / 24);
+    }
 }
 
+// one Option<u32> has size of 8B => 1 << 15 elements have (1 << 18)B size ~262kB
 pub struct OpenAddressingTable<T: PartialEq + Copy, P: Prober, H: Hasher<T>> {
     collisions: usize,
     entries: [Option<T>; ELEMENT_COUNT],
@@ -285,5 +337,13 @@ impl<T: PartialEq + Copy, H: Hasher<T>, P: Prober> HashTable<T> for OpenAddressi
             index = (index + P::probe(attempts)) % self.entries.len();
         }
         false
+    }
+    fn resize_to_bytes(&mut self, bytes: usize, elements: usize) {
+        if elements > ELEMENT_COUNT {
+            panic!("trying to insert more elements than possible by constraint");
+        }
+        if bytes >> 3 != ELEMENT_COUNT {
+            panic!("trying to resize to invalid size");
+        }
     }
 }
