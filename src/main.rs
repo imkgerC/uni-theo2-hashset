@@ -1,6 +1,8 @@
+extern crate gnuplot;
 extern crate rand;
 
 mod hashset;
+use gnuplot::{AxesCommon, Caption, Figure, Graph};
 use hashset::*;
 use rand::{thread_rng, Rng};
 use std::fs::OpenOptions;
@@ -13,7 +15,11 @@ fn get_builder<T: PartialEq + 'static, H: 'static + HashTable<T> + Default>(
 }
 
 const RESIZE_TO_MAKE_FAIR: bool = true;
-const LOAD_FACTORS: [f64; 4] = [0.05, 0.1, 0.2, 0.3];
+const LOAD_FACTORS: [f64; 32] = [
+    0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16,
+    0.17, 0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.3, 0.31, 0.32,
+];
+const ITERATIONS_PER_LOAD_FACTOR: usize = 50;
 
 fn main() {
     #[rustfmt::skip]
@@ -50,7 +56,6 @@ fn print_header(name: &str) {
         }
     }
     println!("{}", out);
-    // println!("{:-<width$}", "", width = 25 + 5 * LOAD_FACTORS.len());
 }
 
 fn print_subtable(name: &str, stats: &[(f32, f64, f32, f64)]) {
@@ -95,7 +100,17 @@ fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
     for (builder, name) in tables {
         let mut stats = [(0_f32, 0_f64, 0_f32, 0_f64); LOAD_FACTORS.len()];
         for (i, s) in LOAD_FACTORS.iter().enumerate() {
-            stats[i] = get_stats(builder.as_ref(), *s);
+            for _ in 0..ITERATIONS_PER_LOAD_FACTOR {
+                let temp = get_stats(builder.as_ref(), *s);
+                stats[i].0 += temp.0;
+                stats[i].1 += temp.1;
+                stats[i].2 += temp.2;
+                stats[i].3 += temp.3;
+            }
+            stats[i].0 /= ITERATIONS_PER_LOAD_FACTOR as f32;
+            stats[i].1 /= ITERATIONS_PER_LOAD_FACTOR as f64;
+            stats[i].2 /= ITERATIONS_PER_LOAD_FACTOR as f32;
+            stats[i].3 /= ITERATIONS_PER_LOAD_FACTOR as f64;
         }
         print_subtable(&name, &stats);
         all_stats.push((name, stats));
@@ -117,15 +132,92 @@ fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
     header.push_str("\r\n");
     file.write_all(header.as_bytes())
         .expect("Could not write to file");
-    for (name, stats) in all_stats {
+    for (name, stats) in &all_stats {
         let mut f = format!("\"{}\"", name);
-        for stat in &stats {
+        for stat in stats {
             f.push_str(&format!(",{},{},{},{}", stat.0, stat.1, stat.2, stat.3));
         }
         f.push_str("\n");
         file.write_all(f.as_bytes())
             .expect("Could not write to file");
     }
+
+    // create graph for every type of HashTable
+    let mut fg = Figure::new();
+    let ax = fg
+        .axes2d()
+        .set_title("Collisions on success", &[])
+        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
+        .set_x_label("Number of elements", &[])
+        .set_y_label("Collisions", &[]);
+    for (name, stats) in &all_stats {
+        ax.lines(
+            LOAD_FACTORS
+                .iter()
+                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
+            stats.iter().map(|x| x.0),
+            &[Caption(&name)],
+        );
+    }
+    fg.save_to_png("./graphs/successful_collisions.png", 1920, 1080)
+        .expect("Could not save file");
+
+    let mut fg = Figure::new();
+    let ax = fg
+        .axes2d()
+        .set_title("Collisions on failure", &[])
+        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
+        .set_x_label("Number of elements", &[])
+        .set_y_label("Collisions", &[]);
+    for (name, stats) in &all_stats {
+        ax.lines(
+            LOAD_FACTORS
+                .iter()
+                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
+            stats.iter().map(|x| x.2),
+            &[Caption(&name)],
+        );
+    }
+    fg.save_to_png("./graphs/failure_collisions.png", 1920, 1080)
+        .expect("Could not save file");
+
+    let mut fg = Figure::new();
+    let ax = fg
+        .axes2d()
+        .set_title("Time on success", &[])
+        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
+        .set_x_label("Number of elements", &[])
+        .set_y_label("time[ns]", &[]);
+    for (name, stats) in &all_stats {
+        ax.lines(
+            LOAD_FACTORS
+                .iter()
+                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
+            stats.iter().map(|x| x.1),
+            &[Caption(&name)],
+        );
+    }
+    fg.save_to_png("./graphs/successful_time.png", 1920, 1080)
+        .expect("Could not save file");
+
+    let mut fg = Figure::new();
+    let ax = fg
+        .axes2d()
+        .set_title("Time on failure", &[])
+        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
+        .set_x_label("Number of elements", &[])
+        .set_y_label("time[ns]", &[]);
+    for (name, stats) in &all_stats {
+        ax.lines(
+            LOAD_FACTORS
+                .iter()
+                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
+            stats.iter().map(|x| x.3),
+            &[Caption(&name)],
+        );
+    }
+    fg.save_to_png("./graphs/failure_time.png", 1920, 1080)
+        .expect("Could not save file");
 }
 
 fn get_stats(builder: &dyn HashTableBuilder<u32>, fill: f64) -> (f32, f64, f32, f64) {
@@ -138,6 +230,9 @@ fn get_stats_rec(
     fill: usize,
     attempt: usize,
 ) -> (f32, f64, f32, f64) {
+    let random_samples = 1_usize << 16;
+    let repetitions_successful = 1;
+
     let mut table = builder.build();
     if RESIZE_TO_MAKE_FAIR {
         table.as_mut().resize_to_bytes(ELEMENT_COUNT << 3, fill);
@@ -158,7 +253,6 @@ fn get_stats_rec(
     let mut nf = 0_usize;
     let mut cs = 0_usize;
     let mut cf = 0_usize;
-    let random_samples = 1_usize << 16;
     let start_time = Instant::now();
     for x in &inserted_nums {
         table.as_mut().has(x);
@@ -170,15 +264,17 @@ fn get_stats_rec(
         table.as_mut().has(&num);
     }
     let duration_f = start_time.elapsed().as_nanos();
-    for x in inserted_nums {
-        HashTable::reset_collisions(table.as_mut());
-        if HashTable::has(table.as_mut(), &x) {
-            ns += 1;
-            cs += HashTable::get_collisions(table.as_ref());
-        } else {
-            println!("did not find what we would need to find");
-            nf += 1;
-            cf += HashTable::get_collisions(table.as_ref());
+    for _ in 0..repetitions_successful {
+        for x in &inserted_nums {
+            HashTable::reset_collisions(table.as_mut());
+            if HashTable::has(table.as_mut(), x) {
+                ns += 1;
+                cs += HashTable::get_collisions(table.as_ref());
+            } else {
+                println!("did not find what we would need to find");
+                nf += 1;
+                cf += HashTable::get_collisions(table.as_ref());
+            }
         }
     }
     for _ in 0..(1_usize << 16) {

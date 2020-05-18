@@ -183,8 +183,11 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for CoalescedTable<T, H> {
         true
     }
 
-    fn resize_to_bytes(&mut self, bytes: usize, _elements: usize) {
+    fn resize_to_bytes(&mut self, bytes: usize, elements: usize) {
         let entries = bytes / 24;
+        if entries < elements {
+            panic!("cannot resize that low");
+        }
         *self = Self::with_size(entries);
     }
 }
