@@ -1,7 +1,7 @@
 extern crate gnuplot;
 extern crate rand;
 
-mod hashset;
+pub mod hashset;
 use gnuplot::{AxesCommon, Caption, Figure, Graph};
 use hashset::*;
 use rand::{thread_rng, Rng};

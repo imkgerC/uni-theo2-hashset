@@ -1,0 +1,80 @@
+% ---- Präambel mit Angaben zum Dokument
+\input{Inhalt/00_Latex/praeambel}
+
+\usepackage{ifthen}
+
+% ---- Persönlichen Daten:
+\newcommand{\titel}{Aufgabe zu HashSets}
+\newcommand{\titelheader}{Aufgabe zu HashSets}
+\newcommand{\arbeit}{Aufgabe zu HashSets}
+\newcommand{\autor}{Erik Imgrund}
+\newcommand{\autorReverse}{Imgrund, Erik}
+\newcommand{\kurs}{TINF19B1}
+
+\input{Inhalt/00_Latex/kopfundFusszeile}
+
+% ---- Hilfreiches
+\newcommand{\zB}{z.\,B. }
+\newcommand{\dash}{d.\,h. }
+
+\newcommand{\code}[1]{\texttt{#1}} % Ist einfacher zu schreiben als ständig \texttt und erlaubt
+                                   % Änderungen im Nachhinein, wenn man z.B. Inline-Code anders stylen möchte.
+
+
+% ---- Beginn des Dokuments
+\begin{document}
+\setlength{\parindent}{0pt}              % Keine Paragraphen Einrückung.
+                                         % Dafür haben wir den Abstand zwischen den Paragraphen.
+\setcounter{secnumdepth}{2}              % Nummerierungstiefe fürs Inhaltsverzeichnis
+\setcounter{tocdepth}{1}                 % Tiefe des Inhaltsverzeichnisses. Ggf. so anpassen,
+                                         % dass das Verzeichnis auf eine Seite passt.
+\sffamily                                % Serifenlose Schrift verwenden.
+
+% ---- Vorspann
+% ------ Titelseite
+\singlespacing
+\newcounter{savepage}
+\pagenumbering{Roman}                    % Römische Seitenzahlen
+\onehalfspacing
+
+% ------ Inhaltsverzeichnis
+\singlespacing
+\title{Aufgabe zu HashSets}
+\author{Erik Imgrund, TINF19B1}
+\maketitle
+\tableofcontents
+
+% ------ Verzeichnisse
+\renewcommand*{\chapterpagestyle}{plain}
+\pagestyle{plain}
+\renewcommand{\lstlistlistingname}{Quellcodeverzeichnis}
+\lstlistoflistings                      % Erzeugen des Listenverzeichnisses
+\setcounter{savepage}{\value{page}}
+
+
+% ---- Inhalt der Arbeit
+\cleardoublepage
+\pagenumbering{arabic}                  % Arabische Seitenzahlen für den Hauptteil
+\setlength{\parskip}{0.5\baselineskip}  % Abstand zwischen Absätzen
+\rmfamily
+\renewcommand*{\chapterpagestyle}{scrheadings}
+\pagestyle{scrheadings}
+\onehalfspacing
+\include{Inhalt/04_Inhalt/introduction}
+\include{Inhalt/04_Inhalt/quellcode}
+
+% ---- Literaturverzeichnis
+% \cleardoublepage
+% \renewcommand*{\chapterpagestyle}{plain}
+% \pagestyle{plain}
+% \pagenumbering{Roman}                   % Römische Seitenzahlen
+% \setcounter{page}{\numexpr\value{savepage}+1}
+% \printbibliography[title=Literaturverzeichnis]
+
+% ---- Anhang
+% \appendix
+%\clearpage
+%\pagenumbering{Roman}  % römische Seitenzahlen für Anhang
+
+\newpage
+\end{document}
