@@ -11,7 +11,7 @@ use std::time::Instant;
 
 fn get_builder<T: PartialEq + 'static, H: 'static + HashTable<T> + Default>(
 ) -> Box<dyn HashTableBuilder<T>> {
-    Box::new(DefaultHashTableBuilder::<T, H>::new())
+    Box::new(DefaultHashTableBuilder::<T, H>::default())
 }
 
 const RESIZE_TO_MAKE_FAIR: bool = true;
