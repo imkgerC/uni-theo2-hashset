@@ -125,11 +125,23 @@ impl<T: PartialEq + Copy, H: Hasher<T>> HashTable<T> for SeparateChainingTable<T
     // if we assume that 0.25 of all elements have collided with another, our formula becomes
     // 16*bytes + 0.25*16*elements
     fn resize_to_bytes(&mut self, bytes: usize, elements: usize) {
-        let available_bytes = bytes as isize - (elements as isize * 4);
-        if available_bytes < 1 {
+        let available_elements = (bytes / 16) as f64;
+        let elements = elements as f64;
+        let mut buckets = available_elements as f64;
+        let mut step = available_elements as f64 / 2_f64;
+        while step > 1_f64 {
+            let used_elements = buckets * ((buckets - 1_f64) / buckets).powf(elements) + elements;
+            if used_elements > available_elements {
+                buckets -= step;
+            } else if used_elements < available_elements {
+                step = step / 2_f64;
+                buckets += step;
+            }
+        }
+        if buckets < 1_f64 {
             panic!("invalid configuration for direct chaining table");
         }
-        *self = Self::with_size(available_bytes as usize / 16);
+        *self = Self::with_size(buckets as usize);
     }
 }
 

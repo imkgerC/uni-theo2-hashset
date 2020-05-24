@@ -1,3 +1,14 @@
 \chapter{Grundlegendes}
 \section{Verwendete Verfahren}
 Zur Kollisionsauflösung wurden Direct Chaining, Separate Chaining, Linear Probing, Quadratic Probing, Triangular Probing und ein Coalesced Table implementiert. Als Hashfunktionen wurden einmal der simple ModHash und MulHash aus der Vorlesung implementiert, sowie ein gebräuchlicher XorShiftHash. Bei dem XorShiftHash wird die Zahl mit einer Konstante multipliziert, bitweise verschoben und dann über ein bitweises Exklusiv-Oder mit der nicht-verschobenen Variante kombiniert.
+\section{Aufgabestellung}
+In der Aufgabe wurde beschrieben, dass mit konstanter Anzahl an Buckets und unter verschiedenen Lastfaktoren die Anzahl an Kollisionen pro Zugriff und \enquote{was für sinnvoll gehalten wird} gemessen werden soll. Für sinnvoll wird gehalten, die Zugriffszeit zu messen, dementsprechend wurde dieses auch getan.
+
+Für sinnvoll wurde ebenfalls gehalten, die Messungen unter anderen Bedingungen zu wiederholen. Da jeder Bucket eines OpenAddressingTables nur 8 Byte groß ist, einer eines CoalescedTables jedoch 24 Byte könnte bei gleichem Speicherverbauch ein 3 mal so großer OpenAddressingTable erstellt werden. Die Messung mit konstanter Anzahl an Buckets benachteiligt stark OpenAddressingTables, deswegen wurde eine zweite Messreihe mit angepassten Größen durchgeführt. Die Herleitung der verwendeten Anzahl an Buckets pro Verfahren ist im Folgenden zu finden.
+
+\section{Anzahl an Buckets in Abhängigkeit der geforderten Speichergröße}
+Die Speichergröße wird festgelegt auf die Größe eines OpenAddressingTables mit $2^{15}$ Buckets, das entspricht 262kB. Für den CoalescedTable sind Buckets 24B groß, also werden $\frac{262kB}{24B} = 10922$ Buckets verwendet.
+
+Für DirectChainingTables ist ein Bucket ebenfalls 8 Byte groß, jedoch werden zusätzlich für jedes Element 16B alloziiert, daher wird vom vorhandanden Speicherlimit zuerst die Anzahl der Elemente multipliziert mit der Größe eines Elements abgezogen und danach die größtmögliche Anzahl an Buckets im Restspeicherplatz alloziiert.
+
+Für SeparateChainingTables ist das Verfahren komplizierter, da bloß Speicherplatz für jedes Element, welches mit einem anderen kollidiert Extra-Platz alloziiert werden muss. Dafür wird dafür ausgegangen, dass grundlegend jedes eingefügte Element 16B Speicherplatz benötigt, jeder leer gebliebene Bucket am Ende des Einfügens jedoch auch 16B. Die Wahrscheinlichkeit, dass ein bestimmter Bucket nach dem Einfügen von $n$ Elementen noch leer ist ist direkt abhängig von der Anzahl der Buckets $m$ und ergibt sich als $p = \left(\frac{m-1}{m}\right)^n$. Der Erwartungswert leerer Buckets ist somit $E = m\left(\frac{m-1}{m}\right)^n$ und der verwendete Platz ist $N = 16B\left(n + m\left(\frac{m-1}{m}\right)^n\right)$. Diese Gleichung wird numerisch für ein möglichst großes $m$ gelöst, für welches $N \le 262kB$ gilt.
