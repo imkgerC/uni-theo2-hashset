@@ -2,13 +2,14 @@ extern crate gnuplot;
 extern crate rand;
 
 pub mod hashset;
-use gnuplot::{AxesCommon, Caption, Figure, Graph};
+pub mod logging;
+
 use hashset::*;
+use logging::*;
 use rand::{thread_rng, Rng};
-use std::fs::OpenOptions;
-use std::io::Write;
 use std::time::Instant;
 
+/// Helper function to get an instance of a DefaultHashTableBuilder for the given HashTable
 fn get_builder<T: PartialEq + 'static, H: 'static + HashTable<T> + Default>(
 ) -> Box<dyn HashTableBuilder<T>> {
     Box::new(DefaultHashTableBuilder::<T, H>::default())
@@ -46,178 +47,34 @@ fn main() {
     generate_stats(tables);
 }
 
-fn print_header(name: &str) {
-    let mut out = format!("{:20}", name);
-    for (i, lambda) in LOAD_FACTORS.iter().enumerate() {
-        let lambda = format!("{:.0}%", lambda * 100_f64);
-        out.push_str(&format!("{:^5}", lambda));
-        if i != LOAD_FACTORS.len() - 1 {
-            out.push_str("|");
-        }
-    }
-    println!("{}", out);
-}
-
-fn print_subtable(name: &str, stats: &[(f32, f64, f32, f64)]) {
-    println!();
-    print_header(name);
-    let mut out = format!("{:20}", "+ collisions");
-    for i in 0..stats.len() {
-        out.push_str(&format!("{:^5.2}", stats[i].0));
-        if i != stats.len() - 1 {
-            out.push_str("|");
-        }
-    }
-    println!("{}", out);
-    let mut out = format!("{:20}", "+ time[ns]");
-    for i in 0..stats.len() {
-        out.push_str(&format!("{:^5.2}", stats[i].1));
-        if i != stats.len() - 1 {
-            out.push_str("|");
-        }
-    }
-    println!("{}", out);
-    let mut out = format!("{:20}", "- collisions");
-    for i in 0..stats.len() {
-        out.push_str(&format!("{:^5.2}", stats[i].2));
-        if i != stats.len() - 1 {
-            out.push_str("|");
-        }
-    }
-    println!("{}", out);
-    let mut out = format!("{:20}", "- time[ns]");
-    for i in 0..stats.len() {
-        out.push_str(&format!("{:^5.2}", stats[i].3));
-        if i != stats.len() - 1 {
-            out.push_str("|");
-        }
-    }
-    println!("{}", out);
-}
-
 fn generate_stats(tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)>) {
     let mut all_stats = Vec::new();
     for (builder, name) in tables {
-        let mut stats = [(0_f32, 0_f64, 0_f32, 0_f64); LOAD_FACTORS.len()];
-        for (i, s) in LOAD_FACTORS.iter().enumerate() {
+        let mut stats = Vec::new();
+        for s in &LOAD_FACTORS {
+            let mut stats_for_this = (0_f32, 0_f64, 0_f32, 0_f64);
             for _ in 0..ITERATIONS_PER_LOAD_FACTOR {
                 let temp = get_stats(builder.as_ref(), *s);
-                stats[i].0 += temp.0;
-                stats[i].1 += temp.1;
-                stats[i].2 += temp.2;
-                stats[i].3 += temp.3;
+                stats_for_this.0 += temp.0;
+                stats_for_this.1 += temp.1;
+                stats_for_this.2 += temp.2;
+                stats_for_this.3 += temp.3;
             }
-            stats[i].0 /= ITERATIONS_PER_LOAD_FACTOR as f32;
-            stats[i].1 /= ITERATIONS_PER_LOAD_FACTOR as f64;
-            stats[i].2 /= ITERATIONS_PER_LOAD_FACTOR as f32;
-            stats[i].3 /= ITERATIONS_PER_LOAD_FACTOR as f64;
+            stats_for_this.0 /= ITERATIONS_PER_LOAD_FACTOR as f32;
+            stats_for_this.1 /= ITERATIONS_PER_LOAD_FACTOR as f64;
+            stats_for_this.2 /= ITERATIONS_PER_LOAD_FACTOR as f32;
+            stats_for_this.3 /= ITERATIONS_PER_LOAD_FACTOR as f64;
+            stats.push(stats_for_this);
         }
-        print_subtable(&name, &stats);
+        print_subtable(&name, &stats, &LOAD_FACTORS);
         all_stats.push((name, stats));
     }
 
     // create output file for analysis in csv format
-    let mut file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open("hashset_data.csv")
-        .expect("Could not open file to write output analysis to");
-    let mut header = String::new();
-    header.push_str("\"Name\",");
-    for lambda in &LOAD_FACTORS {
-        let percentage = format!("{:.0}%", lambda * 100_f64);
-        header.push_str(&format!("\"Success Collisions({0})\",\"Success Time({0})[ns]\",\"Failures Collisions({0})\",\"Failures Time({0})[ns]\",", percentage));
-    }
-    header.push_str("\r\n");
-    file.write_all(header.as_bytes())
-        .expect("Could not write to file");
-    for (name, stats) in &all_stats {
-        let mut f = format!("\"{}\"", name);
-        for stat in stats {
-            f.push_str(&format!(",{},{},{},{}", stat.0, stat.1, stat.2, stat.3));
-        }
-        f.push_str("\n");
-        file.write_all(f.as_bytes())
-            .expect("Could not write to file");
-    }
+    write_csv(&all_stats, &LOAD_FACTORS);
 
     // create graph for every type of HashTable
-    let mut fg = Figure::new();
-    let ax = fg
-        .axes2d()
-        .set_title("Collisions on success", &[])
-        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
-        .set_x_label("Number of elements", &[])
-        .set_y_label("Collisions", &[]);
-    for (name, stats) in &all_stats {
-        ax.lines(
-            LOAD_FACTORS
-                .iter()
-                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
-            stats.iter().map(|x| x.0),
-            &[Caption(&name)],
-        );
-    }
-    fg.save_to_png("./graphs/successful_collisions.png", 1920, 1080)
-        .expect("Could not save file");
-
-    let mut fg = Figure::new();
-    let ax = fg
-        .axes2d()
-        .set_title("Collisions on failure", &[])
-        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
-        .set_x_label("Number of elements", &[])
-        .set_y_label("Collisions", &[]);
-    for (name, stats) in &all_stats {
-        ax.lines(
-            LOAD_FACTORS
-                .iter()
-                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
-            stats.iter().map(|x| x.2),
-            &[Caption(&name)],
-        );
-    }
-    fg.save_to_png("./graphs/failure_collisions.png", 1920, 1080)
-        .expect("Could not save file");
-
-    let mut fg = Figure::new();
-    let ax = fg
-        .axes2d()
-        .set_title("Time on success", &[])
-        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
-        .set_x_label("Number of elements", &[])
-        .set_y_label("time[ns]", &[]);
-    for (name, stats) in &all_stats {
-        ax.lines(
-            LOAD_FACTORS
-                .iter()
-                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
-            stats.iter().map(|x| x.1),
-            &[Caption(&name)],
-        );
-    }
-    fg.save_to_png("./graphs/successful_time.png", 1920, 1080)
-        .expect("Could not save file");
-
-    let mut fg = Figure::new();
-    let ax = fg
-        .axes2d()
-        .set_title("Time on failure", &[])
-        .set_legend(Graph(0.5), Graph(0.9), &[], &[])
-        .set_x_label("Number of elements", &[])
-        .set_y_label("time[ns]", &[]);
-    for (name, stats) in &all_stats {
-        ax.lines(
-            LOAD_FACTORS
-                .iter()
-                .map(|x| (x * ELEMENT_COUNT as f64) as usize),
-            stats.iter().map(|x| x.3),
-            &[Caption(&name)],
-        );
-    }
-    fg.save_to_png("./graphs/failure_time.png", 1920, 1080)
-        .expect("Could not save file");
+    write_graphs(&all_stats, &LOAD_FACTORS, ELEMENT_COUNT);
 }
 
 fn get_stats(builder: &dyn HashTableBuilder<u32>, fill: f64) -> (f32, f64, f32, f64) {
