@@ -1,3 +1,13 @@
 \chapter{Interpretation der Ergebnisse}
 \section{Interpretation der Egebnisse unter den Bedingungen der Aufgabenstellung}
+Die Ergebnisse zeigen eindeutig, dass unter hohem Füllstand der OpenAddressingTables diese nicht mehr zu gebrauchen sind. Ab einem Füllstand von mehr als 50\% sind diese langsamer, als ihre auf Chaining basierenden Alternativen. Bei kompletter Befüllung sind diese sogar komplett sinnfrei, da ein erfolgloser Zugriff zur linearen Suche über das komplette Feld der gespeicherten Werte wird.
+
+Daraus lässt sich schließen, dass es sinnvoll ist, dass OpenAddressingTables meist ab 50\% Füllstand in wachsen sollen, sodass dieser nie übertroffen wird. Unklar ist, ob dieses Wachsen dann auch mit einem erhöhten Speicherverbrauch für OpenAddressingTables im Allgemeinen einhergeht. Dafür wurden im Folgenden die weiteren Tests mit Skalierungen der Größe gemacht.
+
+Werden die verschiedenen Hashing-Funktionen betrachtet, so ist nur eindeutig ablesbar, dass das multiplikative Hashen nicht gut abschneidet. Das könnte an nicht ausreichender Genauigkeit der Operationen liegen oder an anderem. XORShift-Hashing und Modulo Hashing funktionieren ähnlich gut. Im Durchschnitt schneidet XORShift-Hashing jedoch knapp besser ab.
 \section{Interpration der Ergebnisse unter für sinnvoll gehaltenen Bedingungen}
+Die Ergebnisse wurden bei diesem Test der Übersichtlichkeit wegen nur mit einer Hashing-Funktion gezeigt. Da XORShift-Hashing im Durchschnitt die besten Ergebnisse liefert, wird dieses verwendet. QuadraticProbing wird ebenfalls weggelassen, da es keine Vorteile gegenüber den anderen beiden Varianten hat.
+
+Die Ergebnisse zeigen bei gleichem Speicherverbrauch deutlich weniger Kollisionen, sowie auch deutlich kürzere Zugriffszeiten für OpenAddressingTables. Die OpenAddressingTables bleiben in der Regel auch bei dem größten getesteten Füllstand noch unter 10ns. Das erklärt die Popularität ebendergleichen in der Praxis. Mit einer besseren Hashing-Funtktion und mit noch bessseren Kollisionsresolutionsverfahren lassen sich dann bei hochperformanten Implementierungen noch schnellere Zeiten auch bei größeren Objekten erreichen.
+
+ChainingTables hingegen scheinen trotzdem nicht unnutzbar langsam zu sein und könnten deswegen verwendet werden, wenn die Latenz durch ein plötzliches Wachstum nicht oder nur schwierig über lange Zeit amortisiert werden könnte.

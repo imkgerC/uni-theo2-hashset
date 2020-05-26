@@ -35,26 +35,79 @@ const ITERATIONS_PER_LOAD_FACTOR: usize = 50;
 
 fn main() {
     // All variants of HashTable possible in this module
-    #[rustfmt::skip]
     let tables: Vec<(Box<dyn HashTableBuilder<u32>>, String)> = vec![
-        (get_builder::<u32, OpenAddressingTable::<u32, QuadraticProber, MulHash>>(), "Quadratic Mul".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, QuadraticProber, ModHash>>(), "Quadratic Mod".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, QuadraticProber, XorShiftHash>>(), "Quadratic XOR".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, LinearProber, MulHash>>(), "Linear Mul".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, LinearProber, ModHash>>(), "Linear Mod".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, LinearProber, XorShiftHash>>(), "Linear XOR".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, TriangularProber, MulHash>>(), "Triangular Mul".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, TriangularProber, ModHash>>(), "Triangular Mod".to_owned()),
-        (get_builder::<u32, OpenAddressingTable::<u32, TriangularProber, XorShiftHash>>(), "Triangular XOR".to_owned()),
-        (get_builder::<u32, DirectChainingTable::<u32, MulHash>>(), "Direct Mul".to_owned()),
-        (get_builder::<u32, DirectChainingTable::<u32, ModHash>>(), "Direct Mod".to_owned()),
-        (get_builder::<u32, DirectChainingTable::<u32, XorShiftHash>>(), "Direct XOR".to_owned()),
-        (get_builder::<u32, SeparateChainingTable::<u32, MulHash>>(), "Separate Mul".to_owned()),
-        (get_builder::<u32, SeparateChainingTable::<u32, ModHash>>(), "Separate Mod".to_owned()),
-        (get_builder::<u32, SeparateChainingTable::<u32, XorShiftHash>>(), "Separate XOR".to_owned()),
-        (get_builder::<u32, CoalescedTable::<u32, MulHash>>(), "Coalesced Mul".to_owned()),
-        (get_builder::<u32, CoalescedTable::<u32, ModHash>>(), "Coalesced Mod".to_owned()),
-        (get_builder::<u32, CoalescedTable::<u32, XorShiftHash>>(), "Coalesced XOR".to_owned()),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, QuadraticProber, MulHash>>(),
+            "Quadratic Mul".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, QuadraticProber, ModHash>>(),
+            "Quadratic Mod".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, QuadraticProber, XorShiftHash>>(),
+            "Quadratic XOR".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, LinearProber, MulHash>>(),
+            "Linear Mul".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, LinearProber, ModHash>>(),
+            "Linear Mod".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, LinearProber, XorShiftHash>>(),
+            "Linear XOR".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, TriangularProber, MulHash>>(),
+            "Triangular Mul".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, TriangularProber, ModHash>>(),
+            "Triangular Mod".to_owned(),
+        ),
+        (
+            get_builder::<u32, OpenAddressingTable<u32, TriangularProber, XorShiftHash>>(),
+            "Triangular XOR".to_owned(),
+        ),
+        (
+            get_builder::<u32, DirectChainingTable<u32, MulHash>>(),
+            "Direct Mul".to_owned(),
+        ),
+        (
+            get_builder::<u32, DirectChainingTable<u32, ModHash>>(),
+            "Direct Mod".to_owned(),
+        ),
+        (
+            get_builder::<u32, DirectChainingTable<u32, XorShiftHash>>(),
+            "Direct XOR".to_owned(),
+        ),
+        (
+            get_builder::<u32, SeparateChainingTable<u32, MulHash>>(),
+            "Separate Mul".to_owned(),
+        ),
+        (
+            get_builder::<u32, SeparateChainingTable<u32, ModHash>>(),
+            "Separate Mod".to_owned(),
+        ),
+        (
+            get_builder::<u32, SeparateChainingTable<u32, XorShiftHash>>(),
+            "Separate XOR".to_owned(),
+        ),
+        (
+            get_builder::<u32, CoalescedTable<u32, MulHash>>(),
+            "Coalesced Mul".to_owned(),
+        ),
+        (
+            get_builder::<u32, CoalescedTable<u32, ModHash>>(),
+            "Coalesced Mod".to_owned(),
+        ),
+        (
+            get_builder::<u32, CoalescedTable<u32, XorShiftHash>>(),
+            "Coalesced XOR".to_owned(),
+        ),
     ];
     generate_stats(tables);
 }
@@ -191,9 +244,9 @@ fn get_stats_rec(
     let ns = ns as f32;
     let cs = cs as f32;
     (
-        (cs / ns), // average number of collisions on success
-        (duration_s as f64 / fill as f64), // average time on success
-        (cf / nf), // average number of collisions on fail
+        (cs / ns),                                   // average number of collisions on success
+        (duration_s as f64 / fill as f64),           // average time on success
+        (cf / nf),                                   // average number of collisions on fail
         (duration_f as f64 / random_samples as f64), // average time on fail
     )
 }

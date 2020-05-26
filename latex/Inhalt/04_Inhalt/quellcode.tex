@@ -1,8 +1,8 @@
 \chapter{Programm- bzw. Quellcode}
 \section{Quellcode}
-Der komplette Quellcode inklusive Graph-Generierung wurde in Rust geschrieben. Die Ausführung sollte über das Tool \enquote{cargo} durchgeführt werden. Das erhaltene Executable gibt die gemessenen Daten in Tabellenform in stdout aus, erstellt eine csv-Datei mit den Daten und erstellt 4 Graphen. Die Konfiguration der Messung erfolgt über den Quellcode.
+Der komplette Quellcode inklusive Graph-Generierung wurde in Rust geschrieben. Ausgeführt der Code über das Tool \enquote{cargo}. Das erhaltene Executable gibt die gemessenen Daten in Tabellenform in stdout aus, erstellt eine csv-Datei mit den Daten und erstellt 4 Graphen. Die Konfiguration der Messung erfolgt über den Quellcode.
 
-Da gefordert wurde, dass der komplette Quellcode im Dokument enthalten ist, hier eine Sektion mit demselben. Alternativ kann das Projekt auch angenehm auf GitHub unter \footnote{https://github.com/imkgerC/uni-theo2-hashset} eingesehen werden. Die Dokumentation und Erklärung des Codes ist über \enquote{Doc Comments} realisiert, kann also im Code durch Kommentare komplett eingebettet gelesen werden. Alternativ kann auch über den Aufruf des Befehls \code{cargo doc} eine HTML-Dokumentation generiert werden.
+Da gefordert wurde, dass der komplette Quellcode im Dokument enthalten ist, folgt eine Sektion mit demselben. Alternativ kann das Projekt auch angenehm auf GitHub unter \footnote{https://github.com/imkgerC/uni-theo2-hashset} eingesehen werden. Die Dokumentation und Erklärung des Codes ist über \enquote{Doc Comments} realisiert, kann also im Code durch Kommentare gelesen werden.
 \section{Vollständiger Quellcode}
 \lstinputlisting[label=code:main, caption=main.rs, language=Rust, style=colouredRust]{../src/main.rs}
 \lstinputlisting[label=code:mod, caption=mod.rs, language=Rust, style=colouredRust]{../src/hashset/mod.rs}

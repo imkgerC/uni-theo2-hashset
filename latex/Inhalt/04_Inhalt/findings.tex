@@ -1,7 +1,41 @@
 \chapter{Ergebnisse}
+Es wurde mit $2^15$ Plätzen im OpenAddressingTable gearbeitet. Wie bereits im vorigen Kapitel erläutert werden im ersten Teil der Ergebnisse für jede Variante gleich viele buckets verwendet, im zweiten Teil für jede Variante gleich viel Hauptspeicher. Die Messungen wurden jeweils über mindestens $2^16$ Zugriffe gemacht und jeder Test wurde 50 Mal wiederholt. Die Messungen wurden auf einem i7-6700 als Prozessor gemacht.
+
+\begin{table}[!ht]
+\begin{tabular}{l|c}
+    Bezeichnung & Beschreibung \\
+    \hline
+    Quadratic Mul & Quadratic Probing+Mul Hashing\\
+    Quadratic Mod & Quadratic Probing+Mod Hashing\\
+    Quadratic XOR & Quadratic Probing+XORShift Hashing\\
+    \hline
+    Linear Mul & Linear Probing+Mul Hashing\\
+    Linear Mod & Linear Probing+Mod Hashing\\
+    Linear XOR & Linear Probing+XORShift Hashing\\
+    \hline
+    Triangular Mul & Triangular Probing+Mul Hashing\\
+    Triangular Mod & Triangular Probing+Mod Hashing\\
+    Triangular XOR & Triangular Probing+XORShift Hashing\\
+    \hline
+    Direct Mul & Direct Chaining+Mul Hashing\\
+    Direct Mod & Direct Chaining+Mod Hashing\\
+    Direct XOR & Direct Chaining+XORShift Hashing\\
+    \hline
+    Separate Mul & Separate Chaining+Mul Hashing\\
+    Separate Mod & Separate Chaining+Mod Hashing\\
+    Separate XOR & Separate Chaining+XORShift Hashing\\
+    \hline
+    Coalesced Mul & Coalesced Chaining+Mul Hashing\\
+    Coalesced Mod & Coalesced Chaining+Mod Hashing\\
+    Coalesced XOR & Coalesced Chaining+XORShift Hashing\\
+\end{tabular}
+\centering
+\caption{Erläuterung der einzelnen Bezeichnungen}
+\end{table}
+\FloatBarrier
 \section{Ergebnisse bei Messung nach Aufgabenbedingungen}
-\begin{table}[h!]
-\begin{tabular}{c|cccc}
+\begin{table}[!ht]
+\begin{tabular}{l|cccc}
     Name & 50\% & 90\% & 95\% & 100\% \\
     \hline
     Quadratic Mul & 0,42 & 1,73 & 2,35 & 8,8 \\
@@ -31,8 +65,8 @@
 \centering
 \caption{Durchschnittliche Kollisionen bei Zugriff mit Erfolg}
 \end{table}
-\begin{table}[h!]
-\begin{tabular}{c|cccc}
+\begin{table}[!ht]
+\begin{tabular}{l|cccc}
     Name & 50\% & 90\% & 95\% & 100\% \\
     \hline
     Quadratic Mul & 1,14 & 9,50 & 19,51 & - \\
@@ -60,10 +94,10 @@
     Coalesced XOR & 2,18 & 2,80 & 2,93 & 3,06 \\
 \end{tabular}
 \centering
-\caption{Durchschnittliche Kollisionen bei Zugriff mit Erfolg}
+\caption{Durchschnittliche Kollisionen bei Zugriff ohne Erfolg}
 \end{table}
-\begin{table}[h!]
-\begin{tabular}{c|cccc}
+\begin{table}[!ht]
+\begin{tabular}{l|cccc}
     Name & 50\% & 90\% & 95\% & 100\% \\
     \hline
     Quadratic Mul & 15,69 & 22,84 & 26,38 & 36,12 \\
@@ -91,10 +125,10 @@
     Coalesced XOR & 12,40 & 23,61 & 16,96 & 18,37 \\
 \end{tabular}
 \centering
-\caption{Durchschnittliche Kollisionen bei Zugriff mit Erfolg}
+\caption{Durchschnittliche Zeit[ns] bei Zugriff mit Erfolg}
 \end{table}
-\begin{table}[h!]
-\begin{tabular}{c|cccc}
+\begin{table}[!ht]
+\begin{tabular}{l|cccc}
     Name & 50\% & 90\% & 95\% & 100\% \\
     \hline
     Quadratic Mul & 26,70 & 54,74 & 63,56 & - \\
@@ -122,23 +156,23 @@
     Coalesced XOR & 17,42 & 34,61 & 30,27 & 32,26 \\
 \end{tabular}
 \centering
-\caption{Durchschnittliche Kollisionen bei Zugriff mit Erfolg}
+\caption{Durchschnittliche Zeit[ns] bei Zugriff ohne Erfolg}
 \end{table}
 \FloatBarrier
 \section{Ergebnisse bei Messung nach für sinnvoll gehaltenen Bedingungen}
-\begin{figure}[h!]
+\begin{figure}[!ht]
     \includegraphics[width=0.7\paperwidth]{Bilder/failure_collisions_part.png}
     \caption{Durchschnittliche Anzahl an Kollisionen bei fehlschlagenden Zugriffen}
 \end{figure}
-\begin{figure}[h!]
+\begin{figure}[!ht]
     \includegraphics[width=0.7\paperwidth]{Bilder/successful_collisions_part.png}
     \caption{Durchschnittliche Anzahl an Kollisionen bei erfolgreichen Zugriffen}
 \end{figure}
-\begin{figure}[h!]
+\begin{figure}[!ht]
     \includegraphics[width=0.7\paperwidth]{Bilder/failure_time_part.png}
     \caption{Durchschnittliche Zugriffszeit bei fehlschlagenden Zugriffen in ns}
 \end{figure}
-\begin{figure}[h!]
+\begin{figure}[!ht]
     \includegraphics[width=0.7\paperwidth]{Bilder/successful_time_part.png}
     \caption{Durchschnittliche Zugriffszeit bei erfolgreichen Zugriffen in ns}
 \end{figure}
