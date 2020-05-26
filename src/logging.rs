@@ -1,7 +1,14 @@
+//! Module for helper logging functions
+//!
+//! This module contains all functions for writing output
 use gnuplot::{AxesCommon, Caption, Figure, Graph};
 use std::fs::OpenOptions;
 use std::io::Write;
 
+/// Print a simple header for the table
+///
+/// # Example
+/// Name         | 50% | 90% | 95% | 100%
 pub fn print_header(name: &str, load_factors: &[f64]) {
     let mut out = format!("{:20}", name);
     for (i, lambda) in load_factors.iter().enumerate() {
@@ -14,6 +21,14 @@ pub fn print_header(name: &str, load_factors: &[f64]) {
     println!("{}", out);
 }
 
+/// Prints a table inclusive header
+///
+/// # Example
+/// Name            | 50% | 90% | 95% | 100%
+/// + collisions    | val | val | val | val
+/// + time[ns]      | val | val | val | val
+/// - collisions    | val | val | val | val
+/// - time[ns]      | val | val | val | val
 pub fn print_subtable(name: &str, stats: &[(f32, f64, f32, f64)], load_factors: &[f64]) {
     println!();
     print_header(name, load_factors);
@@ -51,6 +66,10 @@ pub fn print_subtable(name: &str, stats: &[(f32, f64, f32, f64)], load_factors: 
     println!("{}", out);
 }
 
+/// Writes data to csv file "hashset_data.csv"
+///
+/// Writes one file for all load factors combined.
+/// Size of load_factors and all Vecs in all_stats must be the same
 pub fn write_csv(all_stats: &[(String, Vec<(f32, f64, f32, f64)>)], load_factors: &[f64]) {
     let mut file = OpenOptions::new()
         .create(true)
@@ -62,7 +81,8 @@ pub fn write_csv(all_stats: &[(String, Vec<(f32, f64, f32, f64)>)], load_factors
     header.push_str("\"Name\",");
     for lambda in load_factors {
         let percentage = format!("{:.0}%", lambda * 100_f64);
-        header.push_str(&format!("\"Success Collisions({0})\",\"Success Time({0})[ns]\",\"Failures Collisions({0})\",\"Failures Time({0})[ns]\",", percentage));
+        header.push_str(
+            &format!("\"Success Collisions({0})\",\"Success Time({0})[ns]\"\"Failures Collisions({0})\",\"Failures Time({0})[ns]\",", percentage));
     }
     header.push_str("\r\n");
     file.write_all(header.as_bytes())
@@ -78,7 +98,15 @@ pub fn write_csv(all_stats: &[(String, Vec<(f32, f64, f32, f64)>)], load_factors
     }
 }
 
-pub fn write_graphs(all_stats: &[(String, Vec<(f32, f64, f32, f64)>)], load_factors: &[f64], element_count: usize) {
+/// Writes graph pngs in the graphs subfolder
+///
+/// Writes separate graphs for collision on success,
+/// collisions on failure, time on success + time on failure
+pub fn write_graphs(
+    all_stats: &[(String, Vec<(f32, f64, f32, f64)>)],
+    load_factors: &[f64],
+    element_count: usize,
+) {
     let mut fg = Figure::new();
     let ax = fg
         .axes2d()

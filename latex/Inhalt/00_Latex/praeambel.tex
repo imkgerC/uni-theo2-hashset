@@ -96,6 +96,13 @@
 \renewcommand{\ALG@name}{Algorithmus}   % Umbenennen von "Algorithm" im Header der Listings.
 \makeatother                            % Zeichen wieder zurücksetzen
 \renewcommand{\lstlistingname}{Listing} % Erlaubt das Umbenennen von "Listing" in anderen Titel.
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
 
 % ---- Tabellen
 \usepackage{booktabs}  % Für schönere Tabellen. Enthält neue Befehle wie \midrule
